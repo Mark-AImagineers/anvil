@@ -126,7 +126,7 @@ Focus on what matters: shipping code faster, testing easier, and managing projec
 
 ### AIMPH Infrastructure Overview
 
-**Host:** AIMPH (192.168.0.200)
+**Host:** AIMPH
 - Ryzen 7 5700X, 32GB RAM
 - KVM/libvirt hypervisor
 - VLAN-segmented networking
