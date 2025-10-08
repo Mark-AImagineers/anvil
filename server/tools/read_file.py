@@ -1,23 +1,32 @@
-import os
+# server/tools/read_file.py
+from mcp.types import TextContent
+from server.registry import registry
 
-name = "read_file"
-description = "Reads and returns the content of a specified text file."
 
-def run(params=None):
-    if not params or "path" not in params:
-        return {"error": "Missing required parameter: 'path'"}
-
-    path = params["path"]
-
-    if not os.path.exists(path):
-        return {"error": f"File not found: {path}"}
-
+@registry.register(
+    name="read_file",
+    description="Read the contents of a file",
+    input_schema={
+        "type": "object",
+        "properties": {
+            "path": {
+                "type": "string",
+                "description": "Path to the file to read"
+            }
+        },
+        "required": ["path"]
+    }
+)
+def read_file(arguments: dict) -> list[TextContent]:
+    """Read and return file contents"""
+    path = arguments.get("path")
+    
+    if not path:
+        return [TextContent(type="text", text="Error: path is required")]
+    
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, 'r', encoding='utf-8') as f:
             content = f.read()
-        return {
-            "path": os.path.abspath(path),
-            "content": content
-        }
+        return [TextContent(type="text", text=content)]
     except Exception as e:
-        return {"error": str(e)}
+        return [TextContent(type="text", text=f"Error reading file: {str(e)}")]

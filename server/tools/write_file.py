@@ -1,22 +1,37 @@
-import os
+# server/tools/write_file.py
+from mcp.types import TextContent
+from server.registry import registry
 
-name = "write_file"
-description = "Writes text content to a file, creating or overwriting as needed."
 
-def run(params=None):
-    if not params or "path" not in params or "content" not in params:
-        return {"error": "Missing required parameters: 'path' and 'content'."}
-
-    path = params["path"]
-    content = params["content"]
-
+@registry.register(
+    name="write_file",
+    description="Write content to a file",
+    input_schema={
+        "type": "object",
+        "properties": {
+            "path": {
+                "type": "string",
+                "description": "Path to the file to write"
+            },
+            "content": {
+                "type": "string",
+                "description": "Content to write to the file"
+            }
+        },
+        "required": ["path", "content"]
+    }
+)
+def write_file(arguments: dict) -> list[TextContent]:
+    """Write content to a file"""
+    path = arguments.get("path")
+    content = arguments.get("content")
+    
+    if not path or content is None:
+        return [TextContent(type="text", text="Error: path and content are required")]
+    
     try:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "w", encoding="utf-8") as f:
+        with open(path, 'w', encoding='utf-8') as f:
             f.write(content)
-        return {
-            "path": os.path.abspath(path),
-            "status": "written"
-        }
+        return [TextContent(type="text", text=f"Successfully wrote to {path}")]
     except Exception as e:
-        return {"error": str(e)}
+        return [TextContent(type="text", text=f"Error writing file: {str(e)}")]
