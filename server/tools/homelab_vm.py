@@ -3,6 +3,14 @@ import subprocess
 from mcp.types import TextContent
 from server.registry import registry
 
+try:
+    from server.homelab_config import HOMELAB_HOST, get_vm_names
+except ImportError:
+    # Fallback if config doesn't exist
+    HOMELAB_HOST = "homelab"
+    def get_vm_names():
+        return ["vm1", "vm2", "vm3", "vm4", "vm5"]
+
 
 def ssh_command(host: str, command: str) -> dict:
     """Execute command via SSH and return result"""
@@ -24,14 +32,9 @@ def ssh_command(host: str, command: str) -> dict:
         return {"success": False, "stdout": "", "stderr": str(e)}
 
 
-def list_vms() -> list:
-    """Get list of all VMs"""
-    return ["apps01", "db01", "gitlab01", "gitrunner01", "ops01"]
-
-
 def get_vm_state(vm_name: str) -> str:
     """Get current state of a VM"""
-    result = ssh_command("aimph", f"sudo virsh domstate {vm_name}")
+    result = ssh_command(HOMELAB_HOST, f"sudo virsh domstate {vm_name}")
     if result["success"]:
         return result["stdout"].lower()
     return "unknown"
@@ -39,40 +42,40 @@ def get_vm_state(vm_name: str) -> str:
 
 def start_vm(vm_name: str) -> dict:
     """Start a VM"""
-    result = ssh_command("aimph", f"sudo virsh start {vm_name}")
+    result = ssh_command(HOMELAB_HOST, f"sudo virsh start {vm_name}")
     return result
 
 
 def stop_vm(vm_name: str, force: bool = False) -> dict:
     """Stop a VM (graceful shutdown or force)"""
     if force:
-        result = ssh_command("aimph", f"sudo virsh destroy {vm_name}")
+        result = ssh_command(HOMELAB_HOST, f"sudo virsh destroy {vm_name}")
     else:
-        result = ssh_command("aimph", f"sudo virsh shutdown {vm_name}")
+        result = ssh_command(HOMELAB_HOST, f"sudo virsh shutdown {vm_name}")
     return result
 
 
 def restart_vm(vm_name: str) -> dict:
     """Restart a VM"""
-    result = ssh_command("aimph", f"sudo virsh reboot {vm_name}")
+    result = ssh_command(HOMELAB_HOST, f"sudo virsh reboot {vm_name}")
     return result
 
 
 def suspend_vm(vm_name: str) -> dict:
     """Suspend (pause) a VM"""
-    result = ssh_command("aimph", f"sudo virsh suspend {vm_name}")
+    result = ssh_command(HOMELAB_HOST, f"sudo virsh suspend {vm_name}")
     return result
 
 
 def resume_vm(vm_name: str) -> dict:
     """Resume a suspended VM"""
-    result = ssh_command("aimph", f"sudo virsh resume {vm_name}")
+    result = ssh_command(HOMELAB_HOST, f"sudo virsh resume {vm_name}")
     return result
 
 
 @registry.register(
     name="homelab_vm",
-    description="Manage VM lifecycle: start, stop, restart, suspend, resume VMs on AIMPH homelab",
+    description="Manage VM lifecycle: start, stop, restart, suspend, resume VMs on homelab",
     input_schema={
         "type": "object",
         "properties": {
@@ -83,7 +86,6 @@ def resume_vm(vm_name: str) -> dict:
             },
             "vm_name": {
                 "type": "string",
-                "enum": ["apps01", "db01", "gitlab01", "gitrunner01", "ops01", "all"],
                 "description": "Name of VM (or 'all' for batch operations)"
             },
             "force": {
@@ -102,11 +104,13 @@ def homelab_vm(arguments: dict) -> list[TextContent]:
     force = arguments.get("force", False)
     
     try:
+        # Get available VMs from config
+        available_vms = get_vm_names()
+        
         # List all VMs
         if action == "list":
-            vms = list_vms()
             output = ["Available VMs:"]
-            for vm in vms:
+            for vm in available_vms:
                 state = get_vm_state(vm)
                 status_icon = "✅" if state == "running" else "❌" if state == "shut off" else "⏸️"
                 output.append(f"  {status_icon} {vm:<15} - {state}")
@@ -118,8 +122,10 @@ def homelab_vm(arguments: dict) -> list[TextContent]:
         
         # Handle 'all' VMs
         if vm_name == "all":
-            vms_to_process = list_vms()
+            vms_to_process = available_vms
         else:
+            if vm_name not in available_vms:
+                return [TextContent(type="text", text=f"Error: Unknown VM '{vm_name}'. Available: {', '.join(available_vms)}")]
             vms_to_process = [vm_name]
         
         results = []

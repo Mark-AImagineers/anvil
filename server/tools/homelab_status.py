@@ -4,6 +4,17 @@ import json
 from mcp.types import TextContent
 from server.registry import registry
 
+try:
+    from server.homelab_config import HOMELAB_HOST, VMS, get_vm_names, get_vm_ip
+except ImportError:
+    # Fallback if config doesn't exist
+    HOMELAB_HOST = "homelab"
+    VMS = {}
+    def get_vm_names():
+        return ["vm1", "vm2", "vm3", "vm4", "vm5"]
+    def get_vm_ip(vm_name):
+        return "192.168.x.x"
+
 
 def ssh_command(host: str, command: str) -> dict:
     """Execute command via SSH and return result"""
@@ -26,21 +37,21 @@ def ssh_command(host: str, command: str) -> dict:
 
 
 def get_host_status() -> dict:
-    """Get AIMPH host status"""
+    """Get homelab host status"""
     # Uptime
-    uptime_result = ssh_command("aimph", "uptime -p")
+    uptime_result = ssh_command(HOMELAB_HOST, "uptime -p")
     uptime = uptime_result["stdout"] if uptime_result["success"] else "unknown"
     
     # CPU usage
-    cpu_result = ssh_command("aimph", "top -bn1 | grep 'Cpu(s)' | awk '{print $2}' | cut -d'%' -f1")
+    cpu_result = ssh_command(HOMELAB_HOST, "top -bn1 | grep 'Cpu(s)' | awk '{print $2}' | cut -d'%' -f1")
     cpu_usage = cpu_result["stdout"] if cpu_result["success"] else "unknown"
     
     # Memory
-    mem_result = ssh_command("aimph", "free -h | awk 'NR==2{printf \"%s/%s (%.1f%%)\", $3,$2,($3/$2)*100}'")
+    mem_result = ssh_command(HOMELAB_HOST, "free -h | awk 'NR==2{printf \"%s/%s (%.1f%%)\", $3,$2,($3/$2)*100}'")
     memory = mem_result["stdout"] if mem_result["success"] else "unknown"
     
     # Disk
-    disk_result = ssh_command("aimph", "df -h / | awk 'NR==2{printf \"%s/%s (%s)\", $3,$2,$5}'")
+    disk_result = ssh_command(HOMELAB_HOST, "df -h / | awk 'NR==2{printf \"%s/%s (%s)\", $3,$2,$5}'")
     disk = disk_result["stdout"] if disk_result["success"] else "unknown"
     
     return {
@@ -56,16 +67,16 @@ def get_vm_status() -> list:
     vms = []
     
     # Get VM list
-    vm_list_result = ssh_command("aimph", "sudo virsh list --all")
+    vm_list_result = ssh_command(HOMELAB_HOST, "sudo virsh list --all")
     if not vm_list_result["success"]:
         return vms
     
     # Parse VM info
-    vm_names = ["apps01", "db01", "gitlab01", "gitrunner01", "ops01"]
+    vm_names = get_vm_names()
     
     for vm_name in vm_names:
         # Get VM info
-        info_result = ssh_command("aimph", f"sudo virsh dominfo {vm_name}")
+        info_result = ssh_command(HOMELAB_HOST, f"sudo virsh dominfo {vm_name}")
         if not info_result["success"]:
             continue
         
@@ -84,31 +95,30 @@ def get_vm_status() -> list:
                 mem_kb = line.split(":", 1)[1].strip().split()[0]
                 memory = f"{int(mem_kb) // 1024 // 1024}GB"
         
-        # Get IP if available
-        ip_map = {
-            "apps01": "192.168.20.10",
-            "db01": "192.168.30.10",
-            "gitlab01": "192.168.40.10",
-            "gitrunner01": "192.168.20.11",
-            "ops01": "192.168.40.11"
-        }
+        # Get IP from config
+        ip = get_vm_ip(vm_name)
         
         vms.append({
             "name": vm_name,
             "state": state,
             "cpu": cpu,
             "memory": memory,
-            "ip": ip_map.get(vm_name, "unknown")
+            "ip": ip
         })
     
     return vms
 
 
 def get_containers_status() -> list:
-    """Get Docker containers on apps01"""
+    """Get Docker containers on apps VM"""
     containers = []
     
-    result = ssh_command("aimph", "ssh apps01 'sudo docker ps --format \"{{.Names}}|{{.Status}}|{{.Ports}}\"'")
+    # Use first apps VM from config
+    apps_vm = next((vm for vm in get_vm_names() if "apps" in vm.lower()), None)
+    if not apps_vm:
+        return containers
+    
+    result = ssh_command(HOMELAB_HOST, f"ssh {apps_vm} 'sudo docker ps --format \"{{{{.Names}}}}|{{{{.Status}}}}|{{{{.Ports}}}}\"'")
     if not result["success"]:
         return containers
     
@@ -130,40 +140,49 @@ def get_services_status() -> dict:
     """Get status of key services"""
     services = {}
     
-    # PostgreSQL on db01
-    pg_result = ssh_command("aimph", "ssh db01 'ps aux | grep \"postgres -D\" | grep -v grep'")
-    services["postgresql"] = {
-        "vm": "db01",
-        "status": "running" if pg_result["success"] and pg_result["stdout"] else "stopped"
-    }
+    # Find VMs by purpose from config
+    db_vm = next((vm for vm in get_vm_names() if "db" in vm.lower()), None)
+    gitlab_vm = next((vm for vm in get_vm_names() if "gitlab" in vm.lower() and "runner" not in vm.lower()), None)
+    runner_vm = next((vm for vm in get_vm_names() if "runner" in vm.lower()), None)
+    ops_vm = next((vm for vm in get_vm_names() if "ops" in vm.lower()), None)
     
-    # GitLab on gitlab01
-    gitlab_result = ssh_command("aimph", "ssh gitlab01 'ps aux | grep gitlab | grep -v grep | head -1'")
-    services["gitlab"] = {
-        "vm": "gitlab01",
-        "status": "running" if gitlab_result["success"] and gitlab_result["stdout"] else "stopped"
-    }
+    # PostgreSQL
+    if db_vm:
+        pg_result = ssh_command(HOMELAB_HOST, f"ssh {db_vm} 'ps aux | grep \"postgres -D\" | grep -v grep'")
+        services["postgresql"] = {
+            "vm": db_vm,
+            "status": "running" if pg_result["success"] and pg_result["stdout"] else "stopped"
+        }
     
-    # GitLab Runner on gitrunner01
-    runner_result = ssh_command("aimph", "ssh gitrunner01 'ps aux | grep gitlab-runner | grep -v grep | head -1'")
-    services["gitlab_runner"] = {
-        "vm": "gitrunner01",
-        "status": "running" if runner_result["success"] and runner_result["stdout"] else "stopped"
-    }
+    # GitLab
+    if gitlab_vm:
+        gitlab_result = ssh_command(HOMELAB_HOST, f"ssh {gitlab_vm} 'ps aux | grep gitlab | grep -v grep | head -1'")
+        services["gitlab"] = {
+            "vm": gitlab_vm,
+            "status": "running" if gitlab_result["success"] and gitlab_result["stdout"] else "stopped"
+        }
     
-    # Grafana on ops01
-    grafana_result = ssh_command("aimph", "ssh ops01 'ps aux | grep grafana.*server | grep -v grep'")
-    services["grafana"] = {
-        "vm": "ops01",
-        "status": "running" if grafana_result["success"] and grafana_result["stdout"] else "stopped"
-    }
+    # GitLab Runner
+    if runner_vm:
+        runner_result = ssh_command(HOMELAB_HOST, f"ssh {runner_vm} 'ps aux | grep gitlab-runner | grep -v grep | head -1'")
+        services["gitlab_runner"] = {
+            "vm": runner_vm,
+            "status": "running" if runner_result["success"] and runner_result["stdout"] else "stopped"
+        }
     
-    # Prometheus on ops01
-    prom_result = ssh_command("aimph", "ssh ops01 'ps aux | grep prometheus | grep -v grep | head -1'")
-    services["prometheus"] = {
-        "vm": "ops01",
-        "status": "running" if prom_result["success"] and prom_result["stdout"] else "stopped"
-    }
+    # Grafana and Prometheus
+    if ops_vm:
+        grafana_result = ssh_command(HOMELAB_HOST, f"ssh {ops_vm} 'ps aux | grep grafana.*server | grep -v grep'")
+        services["grafana"] = {
+            "vm": ops_vm,
+            "status": "running" if grafana_result["success"] and grafana_result["stdout"] else "stopped"
+        }
+        
+        prom_result = ssh_command(HOMELAB_HOST, f"ssh {ops_vm} 'ps aux | grep prometheus | grep -v grep | head -1'")
+        services["prometheus"] = {
+            "vm": ops_vm,
+            "status": "running" if prom_result["success"] and prom_result["stdout"] else "stopped"
+        }
     
     return services
 
@@ -174,12 +193,12 @@ def format_homelab_status(host: dict, vms: list, containers: list, services: dic
     
     # Header
     output.append("=" * 80)
-    output.append("🏠 AIMPH HOMELAB STATUS")
+    output.append("🏠 HOMELAB STATUS")
     output.append("=" * 80)
     output.append("")
     
     # Host Status
-    output.append("📊 HOST (AIMPH)")
+    output.append("📊 HOST")
     output.append("-" * 80)
     output.append(f"  Uptime:     {host['uptime']}")
     output.append(f"  CPU Usage:  {host['cpu_usage']}%")
@@ -191,13 +210,15 @@ def format_homelab_status(host: dict, vms: list, containers: list, services: dic
     output.append("💻 VIRTUAL MACHINES")
     output.append("-" * 80)
     for vm in vms:
-        status_icon = "✅" if vm["state"] == "running" else "❌"
-        output.append(f"  {status_icon} {vm['name']:<15} {vm['state']:<10} {vm['ip']:<16} {vm['cpu']} vCPU  {vm['memory']} RAM")
+        status_icon = "✅" if vm["state"] == "running" else "❌" if vm["state"] == "shut off" else "⏸️"
+        # Mask IP for security
+        masked_ip = vm['ip'].rsplit('.', 1)[0] + ".xxx" if '.' in vm['ip'] else vm['ip']
+        output.append(f"  {status_icon} {vm['name']:<15} {vm['state']:<10} {masked_ip:<16} {vm['cpu']} vCPU  {vm['memory']} RAM")
     output.append("")
     
     # Containers
     if containers:
-        output.append("🐳 DOCKER CONTAINERS (apps01)")
+        output.append("🐳 DOCKER CONTAINERS")
         output.append("-" * 80)
         for container in containers:
             status_icon = "✅" if "Up" in container["status"] else "❌"
@@ -231,7 +252,7 @@ def format_homelab_status(host: dict, vms: list, containers: list, services: dic
 
 @registry.register(
     name="homelab_status",
-    description="Get comprehensive status of AIMPH homelab: host resources, VMs, containers, and services",
+    description="Get comprehensive status of homelab: host resources, VMs, containers, and services",
     input_schema={
         "type": "object",
         "properties": {

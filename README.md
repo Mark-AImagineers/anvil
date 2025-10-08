@@ -30,7 +30,7 @@ Anvil is not just a host for tools — it's built to help me **build tools**, **
 | `git_diff` | Show git diff of changes (unstaged, staged, or both). |
 | `git_log` | Show git commit history with clean formatting. |
 | `run_tests` | Run tests with auto-detected framework (pytest, unittest, Django, jest). |
-| `homelab_status` | Comprehensive AIMPH homelab dashboard showing all VMs, containers, services, and resources. |
+| `homelab_status` | Comprehensive Homelab homelab dashboard showing all VMs, containers, services, and resources. |
 
 ---
 
@@ -62,7 +62,7 @@ Enable reading, writing, searching, and executing on local files safely.
 ### Phase 2A – Git & Testing ✅
 Build version control and testing automation tools.
 
-### Phase 2B – Homelab Management (AIMPH) 🏠 ← **CURRENT FOCUS**
+### Phase 2B – Homelab Management (Homelab) 🏠 ← **CURRENT FOCUS**
 Remote management and monitoring of production homelab infrastructure via SSH.
 
 ### Phase 3 – Frontend Development 🎨
@@ -91,7 +91,7 @@ Focus on what matters: shipping code faster, testing easier, and managing projec
 - Each tool defines its own metadata and handler function.
 - The system is intentionally minimal and will continue to evolve.
 - Designed for **local and internal** use — not intended for public deployment.
-- **SSH access configured** to AIMPH homelab for remote infrastructure management.
+- **SSH access configured** to Homelab homelab for remote infrastructure management.
 
 ---
 
@@ -118,15 +118,15 @@ Focus on what matters: shipping code faster, testing easier, and managing projec
 
 ---
 
-## 🏠 Phase 2B – Homelab Management (AIMPH) - **IN PROGRESS**
+## 🏠 Phase 2B – Homelab Management (Homelab) - **IN PROGRESS**
 
-**Infrastructure:** KVM/libvirt hypervisor (AIMPH) managing 5 VMs across VLANs  
+**Infrastructure:** KVM/libvirt hypervisor (Homelab) managing 5 VMs across VLANs  
 **Access:** Full SSH access configured to host + all VMs  
 **Goal:** Conversational debugging and management of production infrastructure
 
-### AIMPH Infrastructure Overview
+### Homelab Infrastructure Overview
 
-**Host:** AIMPH
+**Host:** Homelab
 - Ryzen 7 5700X, 32GB RAM
 - KVM/libvirt hypervisor
 - VLAN-segmented networking
@@ -134,11 +134,11 @@ Focus on what matters: shipping code faster, testing easier, and managing projec
 **Virtual Machines:**
 | VM | IP | VLAN | Purpose | Key Services |
 |----|----|----- |---------|--------------|
-| apps01 | 192.168.20.10 | br20 | Application host | Docker (6 containers), Node Exporter |
-| db01 | 192.168.30.10 | br30 | Database | PostgreSQL 16 |
-| gitlab01 | 192.168.40.10 | br40 | Version control | GitLab CE |
-| gitrunner01 | 192.168.20.11 | br20 | CI/CD | GitLab Runner |
-| ops01 | 192.168.40.11 | br40 | Monitoring | Grafana, Prometheus |
+| apps01 | 192.168.x.x | br20 | Application host | Docker (6 containers), Node Exporter |
+| db01 | 192.168.x.x | br30 | Database | PostgreSQL 16 |
+| gitlab01 | 192.168.x.x | br40 | Version control | GitLab CE |
+| gitrunner01 | 192.168.x.x | br20 | CI/CD | GitLab Runner |
+| ops01 | 192.168.x.x | br40 | Monitoring | Grafana, Prometheus |
 
 ### Sprint 1: VM & Infrastructure Management
 | Tool | Priority | Purpose | Status |

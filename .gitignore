@@ -43,3 +43,6 @@ coverage/
 .env.*
 secrets/
 *.sqlite3
+
+# SECURITY: Homelab configuration with real IPs/hostnames
+server/homelab_config.py
