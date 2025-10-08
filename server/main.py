@@ -34,6 +34,14 @@ async def handle_message(message, tools):
     id_ = message.get("id")
 
     if method == "initialize":
+        tools_info = [
+            {
+                "name": getattr(t, "name", "unknown"),
+                "description": getattr(t, "description", ""),
+            }
+            for t in tools
+        ]
+
         return {
             "jsonrpc": "2.0",
             "id": id_,
@@ -42,7 +50,9 @@ async def handle_message(message, tools):
                     "name": "Anvil",
                     "version": "0.1.0"
                 },
-                "capabilities": {}
+                "capabilities": {
+                    "tools": tools_info
+                }
             }
         }
     
