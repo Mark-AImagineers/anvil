@@ -73,7 +73,7 @@ def email_read(arguments: dict) -> list[TextContent]:
             
             result += f"Subject: {msg.subject or '(No Subject)'}\n"
             result += f"Date: {msg.date.strftime('%Y-%m-%d %H:%M:%S') if msg.date else 'Unknown'}\n"
-            result += f"Status: {'Read' if msg.seen else 'Unread'}\n"
+            result += f"Status: {'Read' if b'\\Seen' in msg.flags else 'Unread'}\n"
             
             # Attachments
             if msg.attachments:

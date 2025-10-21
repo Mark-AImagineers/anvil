@@ -132,7 +132,7 @@ def email_search(arguments: dict) -> list[TextContent]:
                     "subject": msg.subject or "(No Subject)",
                     "from": msg.from_ or "Unknown",
                     "date": msg.date.strftime("%Y-%m-%d %H:%M:%S") if msg.date else "Unknown",
-                    "seen": msg.seen,
+                    "seen": b'\\Seen' in msg.flags,
                     "size_kb": round(msg.size / 1024, 2) if msg.size else 0,
                     "attachments": len(msg.attachments),
                     "preview": msg.text[:100] + "..." if msg.text and len(msg.text) > 100 else msg.text or ""
