@@ -31,12 +31,18 @@ Anvil is not just a host for tools — it's built to help me **build tools**, **
 | `git_log` | Show git commit history with clean formatting. |
 | `run_tests` | Run tests with auto-detected framework (pytest, unittest, Django, jest). |
 | `homelab_status` | Comprehensive Homelab dashboard showing all VMs, containers, services, and resources. |
+| `homelab_vm` | Manage VM lifecycle: start, stop, restart, suspend, resume VMs on homelab. |
 | `email_list` | List emails from inbox/folder with advanced filtering. |
 | `email_read` | Read full email content including attachments info. |
 | `email_search` | Advanced search across emails with multiple criteria. |
 | `email_send` | Send new emails with attachments support. |
 | `email_reply` | Reply to emails with quote and reply-all support. |
 | `email_folders` | List all email folders/mailboxes in account. |
+| `playwright` | Browser automation using Playwright. Launch browser, navigate, click, fill forms, extract data, capture screenshots. |
+| `chrome_devtools` | Debug web apps using Chrome DevTools Protocol. Connect to Opera GX/Chrome, execute JavaScript, inspect network, analyze DOM, capture screenshots, monitor performance. |
+| `read_page` | Read and extract content from web pages open in browser. Get clean text, markdown, or specific data (links, images, emails, prices, tables). |
+| `research_tools` | Multi-source research and synthesis. Compare info from multiple tabs, fact-check claims, build timelines, extract references. |
+| `clipboard_tools` | Cross-context data handling via clipboard. Capture history, transform formats (JSON/CSV/Markdown/Base64), save reusable snippets with tags. |
 
 ---
 
@@ -73,6 +79,9 @@ Remote management and monitoring of production homelab infrastructure via SSH.
 
 ### Phase 2C – Email Management 📧 ✅ **COMPLETE**
 Full control over PrivateEmail accounts (markb@aimagineers.io, hello@aimagineers.io).
+
+### Phase 2D – Browser Automation & Web Research 🌐 ✅ **COMPLETE**
+Automate browser interactions, extract web content, and enable multi-source research workflows.
 
 ### Phase 3 – Frontend Development 🎨
 Solve the "refresh hell" problem and streamline Django + Bootstrap development.
@@ -181,10 +190,32 @@ Focus on what matters: shipping code faster, testing easier, and managing projec
 | Tool | Priority | Purpose | Status |
 |------|----------|---------|--------|
 | `homelab_status` | 🔥 Critical | Dashboard: VMs, containers, services, resources | ✅ Complete |
-| `homelab_vm` | 🔥 High | Start/stop/restart VMs | 🔨 Building |
+| `homelab_vm` | 🔥 High | Start/stop/restart VMs | ✅ Complete |
 | `homelab_network` | 🔥 High | Check VLAN/bridge configs, routing | 📋 Planned |
 | `homelab_ping` | Medium | Test connectivity between VMs/services | 📋 Planned |
 | `homelab_firewall` | Medium | Check/manage firewall rules | 📋 Planned |
+
+---
+
+## 🌐 Phase 2D – Browser Automation & Web Research - ✅ **COMPLETE**
+
+**Goal:** Automate browser interactions, extract web content, and enable multi-source research workflows.
+
+### Browser Automation & Research Tools
+| Tool | Status | Purpose |
+|------|--------|---------|
+| `playwright` | ✅ Complete | Browser automation: launch, navigate, click, fill, extract, screenshot |
+| `chrome_devtools` | ✅ Complete | Debug web apps via CDP: execute JS, inspect DOM, network monitoring, performance |
+| `read_page` | ✅ Complete | Extract clean text, markdown, or structured data from browser tabs |
+| `research_tools` | ✅ Complete | Multi-source research: compare sources, fact-check, timelines, references |
+| `clipboard_tools` | ✅ Complete | Clipboard management: history, format transformations, snippets |
+
+**Features:**
+- 🤖 Full browser automation with Playwright (Chromium, Firefox, WebKit)
+- 🔍 Chrome DevTools Protocol integration for debugging live apps
+- 📄 Clean content extraction from web pages
+- 🔬 Multi-tab research and fact-checking
+- 📋 Cross-context data handling via clipboard
 
 ---
 
@@ -223,22 +254,26 @@ Solving the **"refresh hell"** problem for Django + Bootstrap + Vanilla CSS deve
 
 ## 📈 Progress
 
-**Total Tools Built:** 19  
-**Phase 1:** 5/5 complete ✅  
-**Phase 2A:** 6/6 complete ✅  
-**Phase 2C:** 6/6 complete ✅ **NEW!**  
-**Phase 2B Sprint 1:** 1/5 in progress  
+**Total Tools Built:** 24
+**Phase 1:** 5/5 complete ✅
+**Phase 2A:** 6/6 complete ✅
+**Phase 2B Sprint 1:** 2/5 in progress
+**Phase 2C:** 6/6 complete ✅
+**Phase 2D:** 5/5 complete ✅ **NEW!**
 
 ---
 
 ## 🎯 Current Status
 
-**Latest Achievement:** Email management tools complete! ✅  
+**Latest Achievement:** Browser automation & web research tools complete! ✅
+Full browser automation with Playwright, Chrome DevTools integration, and multi-source research capabilities.
+
+**Previous Achievement:** Email management tools complete! ✅
 Full control over markb@aimagineers.io and hello@aimagineers.io via conversational interface.
 
-**Active Development:**  
-- Homelab VM management tools
-- Infrastructure monitoring and control
+**Active Development:**
+- Homelab infrastructure management (networking, connectivity, firewall)
+- Planning frontend development tools for Django + Bootstrap workflows
 
 ---
 
