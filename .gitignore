@@ -46,3 +46,6 @@ secrets/
 
 # SECURITY: Homelab configuration with real IPs/hostnames
 server/homelab_config.py
+
+# SECURITY: Email configuration with credentials
+server/email_config.py

@@ -30,7 +30,13 @@ Anvil is not just a host for tools — it's built to help me **build tools**, **
 | `git_diff` | Show git diff of changes (unstaged, staged, or both). |
 | `git_log` | Show git commit history with clean formatting. |
 | `run_tests` | Run tests with auto-detected framework (pytest, unittest, Django, jest). |
-| `homelab_status` | Comprehensive Homelab homelab dashboard showing all VMs, containers, services, and resources. |
+| `homelab_status` | Comprehensive Homelab dashboard showing all VMs, containers, services, and resources. |
+| `email_list` | List emails from inbox/folder with advanced filtering. |
+| `email_read` | Read full email content including attachments info. |
+| `email_search` | Advanced search across emails with multiple criteria. |
+| `email_send` | Send new emails with attachments support. |
+| `email_reply` | Reply to emails with quote and reply-all support. |
+| `email_folders` | List all email folders/mailboxes in account. |
 
 ---
 
@@ -49,7 +55,7 @@ Anvil is not just a host for tools — it's built to help me **build tools**, **
 │ Runtime │ → handles JSON-RPC messages from clients
 └───────────┘
 │
-[ Local File System / Apps / Remote Infrastructure ]
+[ Local File System / Apps / Remote Infrastructure / Email ]
 ```
 
 ## 🚀 Vision
@@ -62,8 +68,11 @@ Enable reading, writing, searching, and executing on local files safely.
 ### Phase 2A – Git & Testing ✅
 Build version control and testing automation tools.
 
-### Phase 2B – Homelab Management (Homelab) 🏠 ← **CURRENT FOCUS**
+### Phase 2B – Homelab Management 🏠
 Remote management and monitoring of production homelab infrastructure via SSH.
+
+### Phase 2C – Email Management 📧 ✅ **COMPLETE**
+Full control over PrivateEmail accounts (markb@aimagineers.io, hello@aimagineers.io).
 
 ### Phase 3 – Frontend Development 🎨
 Solve the "refresh hell" problem and streamline Django + Bootstrap development.
@@ -91,7 +100,8 @@ Focus on what matters: shipping code faster, testing easier, and managing projec
 - Each tool defines its own metadata and handler function.
 - The system is intentionally minimal and will continue to evolve.
 - Designed for **local and internal** use — not intended for public deployment.
-- **SSH access configured** to Homelab homelab for remote infrastructure management.
+- **SSH access configured** to Homelab for remote infrastructure management.
+- **Email access configured** for PrivateEmail accounts via IMAP/SMTP.
 
 ---
 
@@ -118,9 +128,36 @@ Focus on what matters: shipping code faster, testing easier, and managing projec
 
 ---
 
-## 🏠 Phase 2B – Homelab Management (Homelab) - **IN PROGRESS**
+## 📧 Phase 2C – Email Management (PrivateEmail) - ✅ **COMPLETE**
 
-**Infrastructure:** KVM/libvirt hypervisor (Homelab) managing 5 VMs across VLANs  
+**Accounts:** markb@aimagineers.io, hello@aimagineers.io  
+**Provider:** PrivateEmail (Namecheap)  
+**Protocol:** IMAP/SMTP over SSL  
+**Goal:** Full conversational control over business email
+
+### Email Tools
+| Tool | Status | Purpose |
+|------|--------|---------|
+| `email_list` | ✅ Complete | List emails with filters (unread, from, subject, date range) |
+| `email_read` | ✅ Complete | Read full email content with attachments info |
+| `email_search` | ✅ Complete | Advanced search (query, sender, subject, body, attachments) |
+| `email_send` | ✅ Complete | Send new emails with CC/BCC/attachments |
+| `email_reply` | ✅ Complete | Reply to emails with quote, reply-all support |
+| `email_folders` | ✅ Complete | List all mailbox folders |
+
+**Features:**
+- 📥 Read & manage emails from both accounts
+- 📤 Send emails with attachments
+- 🔍 Advanced search with multiple criteria
+- 💬 Reply with automatic quoting
+- 📁 Multi-folder support
+- 🔒 Secure SSL/TLS connections
+
+---
+
+## 🏠 Phase 2B – Homelab Management (In Progress)
+
+**Infrastructure:** KVM/libvirt hypervisor managing 5 VMs across VLANs  
 **Access:** Full SSH access configured to host + all VMs  
 **Goal:** Conversational debugging and management of production infrastructure
 
@@ -149,48 +186,6 @@ Focus on what matters: shipping code faster, testing easier, and managing projec
 | `homelab_ping` | Medium | Test connectivity between VMs/services | 📋 Planned |
 | `homelab_firewall` | Medium | Check/manage firewall rules | 📋 Planned |
 
-**Goal:** Complete visibility and control over VM infrastructure
-
-### Sprint 2: Container & Application Management
-| Tool | Priority | Purpose | Status |
-|------|----------|---------|--------|
-| `homelab_containers` | 🔥 High | List/manage Docker containers on apps01 | 📋 Planned |
-| `homelab_logs` | 🔥 High | Stream container/service logs | 📋 Planned |
-| `homelab_restart` | 🔥 High | Restart containers/services | 📋 Planned |
-| `homelab_exec` | Medium | Execute commands in containers | 📋 Planned |
-| `homelab_tunnel` | Medium | Manage Cloudflare tunnels | 📋 Planned |
-
-**Goal:** Full Docker container lifecycle management
-
-### Sprint 3: Database Management
-| Tool | Priority | Purpose | Status |
-|------|----------|---------|--------|
-| `homelab_db_status` | 🔥 High | PostgreSQL health on db01 | 📋 Planned |
-| `homelab_db_query` | Medium | Run SQL queries | 📋 Planned |
-| `homelab_db_connections` | Medium | Show active DB connections | 📋 Planned |
-| `homelab_db_backup` | Low | Backup databases | 📋 Planned |
-
-**Goal:** Database monitoring and management
-
-### Sprint 4: Diagnostic & Debugging
-| Tool | Priority | Purpose | Status |
-|------|----------|---------|--------|
-| `homelab_diagnose` | 🔥 High | Auto-diagnose common issues | 📋 Planned |
-| `homelab_ports` | Medium | Show listening ports on VMs | 📋 Planned |
-| `homelab_routes` | Medium | Check routing tables | 📋 Planned |
-| `homelab_resources` | Medium | CPU/RAM/disk usage across infrastructure | 📋 Planned |
-
-**Goal:** Rapid problem identification and resolution
-
-### Sprint 5: GitLab & CI/CD
-| Tool | Priority | Purpose | Status |
-|------|----------|---------|--------|
-| `homelab_gitlab` | Medium | GitLab status & management | 📋 Planned |
-| `homelab_runner` | Medium | CI runner status & jobs | 📋 Planned |
-| `homelab_pipeline` | Low | Trigger/monitor pipelines | 📋 Planned |
-
-**Goal:** CI/CD pipeline visibility and control
-
 ---
 
 ### 🎨 Phase 3 – Frontend Development (Future Priority)
@@ -203,26 +198,6 @@ Solving the **"refresh hell"** problem for Django + Bootstrap + Vanilla CSS deve
 | `check_frontend` | 🔥 Critical | Validate HTML/CSS/JS, find errors, check Bootstrap conflicts | 📋 Planned |
 | `clear_django_cache` | 🔥 Critical | Clear static files cache, template cache, cache-busting | 📋 Planned |
 | `validate_html` | 🔥 Critical | Check template syntax, Bootstrap usage, Django tags | 📋 Planned |
-
-#### Sprint 2: Modern Workflow (Live Development Tools)
-| Tool | Priority | Purpose | Status |
-|------|----------|---------|--------|
-| `watch_static` | 🔥 High | Auto-reload on changes, validate code, collectstatic | 📋 Planned |
-| `hot_reload_css` | 🔥 High | Inject CSS changes without page reload | 📋 Planned |
-
-#### Sprint 3: Design Bridge (Figma Integration)
-| Tool | Priority | Purpose | Status |
-|------|----------|---------|--------|
-| `extract_figma_tokens` | Medium | Pull colors, fonts, spacing from Figma → CSS variables | 📋 Planned |
-| `figma_blueprint` | Medium | Analyze Figma frame structure, suggest Bootstrap approach | 📋 Planned |
-| `design_to_bootstrap` | Medium | Screenshot → Bootstrap HTML/CSS (AI vision-based) | 📋 Planned |
-
-#### Sprint 4: Code Quality (Bootstrap Mastery)
-| Tool | Priority | Purpose | Status |
-|------|----------|---------|--------|
-| `reconcile_styles` | Low | Fix Bootstrap vs custom CSS conflicts | 📋 Planned |
-| `bootstrap_component_generator` | Low | Generate Bootstrap components from description | 📋 Planned |
-| `optimize_templates` | Low | Analyze Django templates, suggest improvements | 📋 Planned |
 
 ---
 
@@ -248,22 +223,22 @@ Solving the **"refresh hell"** problem for Django + Bootstrap + Vanilla CSS deve
 
 ## 📈 Progress
 
-**Total Tools Built:** 12  
+**Total Tools Built:** 19  
 **Phase 1:** 5/5 complete ✅  
 **Phase 2A:** 6/6 complete ✅  
-**Phase 2B Sprint 1:** 1/5 complete - `homelab_status` ✅  
+**Phase 2C:** 6/6 complete ✅ **NEW!**  
+**Phase 2B Sprint 1:** 1/5 in progress  
 
 ---
 
-## 🎯 Current Focus
+## 🎯 Current Status
 
-**Problem:** Managing production homelab infrastructure requires constant SSH sessions, manual checks, and troubleshooting across 5 VMs.
+**Latest Achievement:** Email management tools complete! ✅  
+Full control over markb@aimagineers.io and hello@aimagineers.io via conversational interface.
 
-**Solution:** Building conversational AI-assisted homelab management tools for instant visibility and control over entire infrastructure.
-
-**Latest:** `homelab_status` complete! Full dashboard showing 5 VMs, 6 containers, 5 services - all healthy ✅
-
-**Next Tool:** `homelab_vm` - VM lifecycle management (start/stop/restart)
+**Active Development:**  
+- Homelab VM management tools
+- Infrastructure monitoring and control
 
 ---
 
