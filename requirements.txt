@@ -4,8 +4,10 @@ mcp
 # Email tools
 imap-tools
 
-# Web automation
+# Web automation and browser control
 playwright
+websocket-client
+requests
 
 # SSH/Homelab
 paramiko
