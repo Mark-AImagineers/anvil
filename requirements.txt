@@ -1,0 +1,14 @@
+# MCP Server
+mcp
+
+# Email tools
+imap-tools
+
+# Web automation
+playwright
+
+# SSH/Homelab
+paramiko
+
+# Utils
+python-dotenv
