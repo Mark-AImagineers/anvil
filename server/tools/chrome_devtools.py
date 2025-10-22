@@ -1,124 +1,15 @@
 # server/tools/chrome_devtools.py
-import json
-import requests
-import websocket
 import logging
-from typing import Optional, List, Dict, Any
+from typing import Dict
 from mcp.types import TextContent
 from server.registry import registry
+from server.tools.devtools_base import DevToolsClient
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
 
-class ChromeDevToolsClient:
-    """Client for Chrome DevTools Protocol"""
-
-    def __init__(self, host: str = "localhost", port: int = 9222, timeout: int = 10):
-        self.host = host
-        self.port = port
-        self.base_url = f"http://{host}:{port}"
-        self.ws = None
-        self.message_id = 0
-        self.timeout = timeout  # WebSocket timeout in seconds
-        
-    def get_tabs(self) -> List[Dict[str, Any]]:
-        """Get list of all open tabs"""
-        try:
-            response = requests.get(f"{self.base_url}/json", timeout=5)
-            response.raise_for_status()
-            return response.json()
-        except Exception as e:
-            raise Exception(f"Failed to get tabs: {str(e)}")
-    
-    def find_tab(self, url: Optional[str] = None, title: Optional[str] = None, index: Optional[int] = None) -> Optional[Dict]:
-        """Find tab by URL pattern, title, or index"""
-        tabs = self.get_tabs()
-        
-        if index is not None:
-            if 0 <= index < len(tabs):
-                return tabs[index]
-            return None
-        
-        if url:
-            for tab in tabs:
-                if url.lower() in tab.get("url", "").lower():
-                    return tab
-        
-        if title:
-            for tab in tabs:
-                if title.lower() in tab.get("title", "").lower():
-                    return tab
-        
-        return tabs[0] if tabs else None
-    
-    def connect_to_tab(self, tab: Dict) -> None:
-        """Connect WebSocket to specific tab"""
-        ws_url = tab.get("webSocketDebuggerUrl")
-        if not ws_url:
-            raise Exception("Tab does not have WebSocket URL")
-
-        try:
-            # Add timeout to WebSocket connection
-            self.ws = websocket.create_connection(ws_url, timeout=self.timeout)
-        except Exception as e:
-            logger.error(f"Failed to connect to tab: {e}")
-            raise Exception(f"Failed to connect WebSocket: {str(e)}")
-    
-    def send_command(self, method: str, params: Optional[Dict] = None) -> Dict:
-        """Send command to Chrome DevTools"""
-        if not self.ws:
-            raise Exception("Not connected to any tab")
-
-        self.message_id += 1
-        message = {
-            "id": self.message_id,
-            "method": method,
-            "params": params or {}
-        }
-
-        try:
-            self.ws.send(json.dumps(message))
-
-            # Set socket timeout for recv
-            self.ws.settimeout(self.timeout)
-
-            # Wait for response with timeout protection
-            max_iterations = 100  # Prevent infinite loop
-            iterations = 0
-
-            while iterations < max_iterations:
-                try:
-                    response = json.loads(self.ws.recv())
-                    if response.get("id") == self.message_id:
-                        if "error" in response:
-                            error_msg = response['error']
-                            logger.error(f"DevTools error for {method}: {error_msg}")
-                            raise Exception(f"DevTools error: {error_msg}")
-                        return response.get("result", {})
-                    iterations += 1
-                except websocket.WebSocketTimeoutException:
-                    logger.error(f"Timeout waiting for response to {method}")
-                    raise Exception(f"Timeout waiting for DevTools response to {method}")
-
-            raise Exception(f"Too many messages received without matching ID for {method}")
-
-        except Exception as e:
-            logger.error(f"Error sending command {method}: {e}")
-            raise
-    
-    def close(self):
-        """Close WebSocket connection"""
-        if self.ws:
-            try:
-                self.ws.close()
-            except Exception as e:
-                logger.debug(f"Error closing WebSocket (may already be closed): {e}")
-            finally:
-                self.ws = None
-
-
-def action_connect(client: ChromeDevToolsClient, arguments: dict) -> str:
+def action_connect(client: DevToolsClient, arguments: dict) -> str:
     """Connect to browser and list tabs"""
     try:
         tabs = client.get_tabs()
@@ -149,7 +40,7 @@ def action_connect(client: ChromeDevToolsClient, arguments: dict) -> str:
         return f"❌ Failed to connect: {str(e)}\n\nMake sure Opera GX is running with --remote-debugging-port=9222"
 
 
-def action_console(client: ChromeDevToolsClient, arguments: dict) -> str:
+def action_console(client: DevToolsClient, arguments: dict) -> str:
     """Execute JavaScript or read console logs"""
     try:
         # Find and connect to tab
@@ -197,7 +88,7 @@ def action_console(client: ChromeDevToolsClient, arguments: dict) -> str:
         client.close()
 
 
-def action_network(client: ChromeDevToolsClient, arguments: dict) -> str:
+def action_network(client: DevToolsClient, arguments: dict) -> str:
     """Monitor network requests"""
     try:
         # Find and connect to tab
@@ -229,7 +120,7 @@ def action_network(client: ChromeDevToolsClient, arguments: dict) -> str:
         client.close()
 
 
-def action_inspect(client: ChromeDevToolsClient, arguments: dict) -> str:
+def action_inspect(client: DevToolsClient, arguments: dict) -> str:
     """Inspect DOM elements"""
     try:
         # Find and connect to tab
@@ -282,7 +173,7 @@ def action_inspect(client: ChromeDevToolsClient, arguments: dict) -> str:
         client.close()
 
 
-def action_screenshot(client: ChromeDevToolsClient, arguments: dict) -> str:
+def action_screenshot(client: DevToolsClient, arguments: dict) -> str:
     """Capture screenshot"""
     try:
         # Find and connect to tab
@@ -319,7 +210,7 @@ def action_screenshot(client: ChromeDevToolsClient, arguments: dict) -> str:
         client.close()
 
 
-def action_performance(client: ChromeDevToolsClient, arguments: dict) -> str:
+def action_performance(client: DevToolsClient, arguments: dict) -> str:
     """Get performance metrics"""
     try:
         # Find and connect to tab
@@ -408,9 +299,9 @@ def action_performance(client: ChromeDevToolsClient, arguments: dict) -> str:
 def chrome_devtools(arguments: dict) -> list[TextContent]:
     """Chrome DevTools debugging tool"""
     action = arguments.get("action", "connect")
-    
+
     # Create client
-    client = ChromeDevToolsClient()
+    client = DevToolsClient()
     
     try:
         if action == "connect":

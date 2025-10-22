@@ -1,99 +1,33 @@
 # server/tools/read_page.py
 import json
-import requests
-import websocket
+import logging
 from typing import Optional
 from mcp.types import TextContent
 from server.registry import registry
+from server.tools.devtools_base import DevToolsClient
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
-class PageReader:
+class PageReader(DevToolsClient):
     """Simple page content reader using Chrome DevTools"""
-    
+
+    # International currency patterns
+    CURRENCY_PATTERNS = {
+        'USD': r'\$\s?\d+(?:,\d{3})*(?:\.\d{2})?',
+        'EUR': r'€\s?\d+(?:,\d{3})*(?:[.,]\d{2})?',
+        'GBP': r'£\s?\d+(?:,\d{3})*(?:\.\d{2})?',
+        'JPY': r'¥\s?\d+(?:,\d{3})*',
+        'CNY': r'¥\s?\d+(?:,\d{3})*(?:\.\d{2})?|CN¥\s?\d+',
+        'INR': r'₹\s?\d+(?:,\d{3})*(?:\.\d{2})?',
+        'KRW': r'₩\s?\d+(?:,\d{3})*',
+        'RUB': r'₽\s?\d+(?:,\d{3})*(?:\.\d{2})?',
+        'BRL': r'R\$\s?\d+(?:,\d{3})*(?:\.\d{2})?'
+    }
+
     def __init__(self, host: str = "localhost", port: int = 9222):
-        self.host = host
-        self.port = port
-        self.base_url = f"http://{host}:{port}"
-        self.ws = None
-        self.message_id = 0
-    
-    def get_tabs(self):
-        """Get list of all open tabs"""
-        try:
-            response = requests.get(f"{self.base_url}/json", timeout=5)
-            response.raise_for_status()
-            return response.json()
-        except Exception as e:
-            raise Exception(f"Failed to get tabs: {str(e)}")
-    
-    def find_tab(self, url: Optional[str] = None, title: Optional[str] = None, index: Optional[int] = None):
-        """Find tab by URL pattern, title, or index"""
-        tabs = self.get_tabs()
-        
-        if index is not None:
-            if 0 <= index < len(tabs):
-                return tabs[index]
-            return None
-        
-        if url:
-            for tab in tabs:
-                if url.lower() in tab.get("url", "").lower():
-                    return tab
-        
-        if title:
-            for tab in tabs:
-                if title.lower() in tab.get("title", "").lower():
-                    return tab
-        
-        return tabs[0] if tabs else None
-    
-    def connect_to_tab(self, tab):
-        """Connect WebSocket to specific tab"""
-        ws_url = tab.get("webSocketDebuggerUrl")
-        if not ws_url:
-            raise Exception("Tab does not have WebSocket URL")
-        
-        self.ws = websocket.create_connection(ws_url)
-    
-    def send_command(self, method: str, params: Optional[dict] = None):
-        """Send command to Chrome DevTools"""
-        if not self.ws:
-            raise Exception("Not connected to any tab")
-        
-        self.message_id += 1
-        message = {
-            "id": self.message_id,
-            "method": method,
-            "params": params or {}
-        }
-        
-        self.ws.send(json.dumps(message))
-        
-        while True:
-            response = json.loads(self.ws.recv())
-            if response.get("id") == self.message_id:
-                if "error" in response:
-                    raise Exception(f"DevTools error: {response['error']}")
-                return response.get("result", {})
-    
-    def execute_js(self, code: str):
-        """Execute JavaScript and return result"""
-        result = self.send_command("Runtime.evaluate", {
-            "expression": code,
-            "returnByValue": True
-        })
-        
-        if result.get("exceptionDetails"):
-            error = result["exceptionDetails"]
-            raise Exception(f"JavaScript error: {error.get('text', 'Unknown error')}")
-        
-        return result.get("result", {}).get("value")
-    
-    def close(self):
-        """Close WebSocket connection"""
-        if self.ws:
-            self.ws.close()
-            self.ws = None
+        super().__init__(host, port)
 
 
 def action_read(reader: PageReader, arguments: dict) -> str:
@@ -104,36 +38,62 @@ def action_read(reader: PageReader, arguments: dict) -> str:
             title=arguments.get("title"),
             index=arguments.get("tab_index")
         )
-        
+
         if not tab:
             return "❌ Tab not found. Use chrome_devtools connect action to see available tabs."
-        
+
         reader.connect_to_tab(tab)
-        
-        # JavaScript to extract clean content
+
+        # Enhanced JavaScript to extract clean content with readability
         js_code = """
         (function() {
             // Remove scripts, styles, nav, footer, ads
-            const excludeSelectors = 'script, style, nav, footer, .ad, .advertisement, .sidebar, .menu, .header';
-            const exclude = document.querySelectorAll(excludeSelectors);
+            const excludeSelectors = 'script, style, nav, footer, .ad, .advertisement, .sidebar, .menu, .header, [class*="nav"], [class*="sidebar"], [id*="sidebar"]';
+            const clone = document.cloneNode(true);
+            const exclude = clone.querySelectorAll(excludeSelectors);
             exclude.forEach(el => el.remove());
-            
-            // Get main content
-            const main = document.querySelector('main, article, .content, .post, [role="main"]') || document.body;
-            
+
+            // Try multiple main content selectors (priority order)
+            const selectors = [
+                'main',
+                'article',
+                '[role="main"]',
+                '.main-content',
+                '.post-content',
+                '.entry-content',
+                '.article-content',
+                '.content',
+                '#content',
+                '.post',
+                'body'
+            ];
+
+            let main = null;
+            for (const selector of selectors) {
+                main = clone.querySelector(selector);
+                if (main && main.innerText && main.innerText.length > 100) {
+                    break;
+                }
+            }
+
+            if (!main) main = clone.body;
+
             // Extract text
             const text = main.innerText || main.textContent;
-            
+
             // Clean up whitespace
-            return text.replace(/\\n\\s*\\n\\s*\\n/g, '\\n\\n').trim();
+            return text
+                .replace(/\\n\\s*\\n\\s*\\n+/g, '\\n\\n')  // Multiple newlines to double
+                .replace(/[ \\t]+/g, ' ')  // Multiple spaces to single
+                .trim();
         })();
         """
-        
+
         content = reader.execute_js(js_code)
-        
+
         page_title = tab.get("title", "Untitled")
         page_url = tab.get("url", "")
-        
+
         output = []
         output.append("=" * 80)
         output.append(f"📄 {page_title}")
@@ -143,10 +103,11 @@ def action_read(reader: PageReader, arguments: dict) -> str:
         output.append(content)
         output.append("")
         output.append("=" * 80)
-        
+
         return "\n".join(output)
-    
+
     except Exception as e:
+        logger.error(f"Error reading page: {e}")
         return f"❌ Error reading page: {str(e)}"
     finally:
         reader.close()
@@ -270,10 +231,12 @@ def action_extract(reader: PageReader, arguments: dict) -> str:
             """
         
         elif data_type == "prices":
+            # Use improved multi-currency regex
             js_code = """
             const text = document.body.innerText;
-            const priceRegex = /\\$\\s?\\d+(?:,\\d{3})*(?:\\.\\d{2})?/g;
-            const prices = text.match(priceRegex) || [];
+            // International currency patterns
+            const currencyRegex = /[$€£¥₹₩₽]\s?\d+(?:,\d{3})*(?:[.,]\d{2})?|R\$\s?\d+(?:,\d{3})*(?:\.\d{2})?|CN¥\s?\d+/g;
+            const prices = text.match(currencyRegex) || [];
             [...new Set(prices)];
             """
         
