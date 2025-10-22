@@ -1,9 +1,6 @@
 # MCP Server
 mcp
 
-# Email tools
-imap-tools
-
 # Web automation and browser control
 playwright
 websocket-client
@@ -11,6 +8,12 @@ requests
 
 # SSH/Homelab
 paramiko
+
+# Document processing
+python-docx
+python-docx-template
+pypandoc
+Pillow
 
 # Utils
 python-dotenv

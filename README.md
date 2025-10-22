@@ -32,17 +32,23 @@ Anvil is not just a host for tools — it's built to help me **build tools**, **
 | `run_tests` | Run tests with auto-detected framework (pytest, unittest, Django, jest). |
 | `homelab_status` | Comprehensive Homelab dashboard showing all VMs, containers, services, and resources. |
 | `homelab_vm` | Manage VM lifecycle: start, stop, restart, suspend, resume VMs on homelab. |
-| `email_list` | List emails from inbox/folder with advanced filtering. |
-| `email_read` | Read full email content including attachments info. |
-| `email_search` | Advanced search across emails with multiple criteria. |
-| `email_send` | Send new emails with attachments support. |
-| `email_reply` | Reply to emails with quote and reply-all support. |
-| `email_folders` | List all email folders/mailboxes in account. |
 | `playwright` | Browser automation using Playwright. Launch browser, navigate, click, fill forms, extract data, capture screenshots. |
 | `chrome_devtools` | Debug web apps using Chrome DevTools Protocol. Connect to Opera GX/Chrome, execute JavaScript, inspect network, analyze DOM, capture screenshots, monitor performance. |
 | `read_page` | Read and extract content from web pages open in browser. Get clean text, markdown, or specific data (links, images, emails, prices, tables). |
 | `research_tools` | Multi-source research and synthesis. Compare info from multiple tabs, fact-check claims, build timelines, extract references. |
 | `clipboard_tools` | Cross-context data handling via clipboard. Capture history, transform formats (JSON/CSV/Markdown/Base64), save reusable snippets with tags. |
+| `docx_read` | Read and extract content from Word documents. Get full text, metadata, structure, headings, statistics. |
+| `docx_write` | Create new Word documents from scratch. Add headings, paragraphs, tables, lists with formatting. |
+| `docx_edit` | Modify existing Word documents. Find/replace text, add/remove content, update metadata. |
+| `docx_merge` | Combine multiple Word documents into a single file with optional page breaks. |
+| `docx_template` | Fill Word templates with data (mail merge). Generate single or batch documents from JSON/CSV. |
+| `docx_convert` | Convert documents between formats: .docx ↔ PDF, .docx ↔ Markdown, .docx → Plain Text. |
+| `docx_extract` | Extract images, tables (to CSV/JSON), headers/footers, text by style from Word documents. |
+| `docx_search` | Search for text across multiple Word documents with context and metadata filters. |
+| `docx_compare` | Compare two document versions. Show differences, calculate similarity, compare metadata. |
+| `docx_analyze` | Analyze document quality. Get readability scores, word frequency, reading time, style checks. |
+| `docx_comments` | Manage comments and tracked changes. Extract comments, add notes, list reviewers. |
+| `docx_style` | Apply consistent styling. Use presets (professional, academic, modern) or custom styles. |
 
 ---
 
@@ -77,19 +83,19 @@ Build version control and testing automation tools.
 ### Phase 2B – Homelab Management 🏠
 Remote management and monitoring of production homelab infrastructure via SSH.
 
-### Phase 2C – Email Management 📧 ✅ **COMPLETE**
-Full control over PrivateEmail accounts (markb@aimagineers.io, hello@aimagineers.io).
-
-### Phase 2D – Browser Automation & Web Research 🌐 ✅ **COMPLETE**
+### Phase 2C – Browser Automation & Web Research 🌐 ✅ **COMPLETE**
 Automate browser interactions, extract web content, and enable multi-source research workflows.
 
-### Phase 3 – Frontend Development 🎨
+### Phase 3 – Document Productivity 📄 ✅ **COMPLETE**
+Complete Microsoft Word (.docx) document automation and productivity tools.
+
+### Phase 4 – Frontend Development 🎨
 Solve the "refresh hell" problem and streamline Django + Bootstrap development.
 
-### Phase 4 – Project-Specific Tools 🎯
+### Phase 5 – Project-Specific Tools 🎯
 Create tools tailored to Django, FastAPI, and AImagineers.io workflows.
 
-### Phase 5 – Cross-Project Integration 🌐
+### Phase 6 – Cross-Project Integration 🌐
 Connect Anvil to multiple projects as a unified automation layer.
 
 ---
@@ -137,33 +143,6 @@ Focus on what matters: shipping code faster, testing easier, and managing projec
 
 ---
 
-## 📧 Phase 2C – Email Management (PrivateEmail) - ✅ **COMPLETE**
-
-**Accounts:** markb@aimagineers.io, hello@aimagineers.io  
-**Provider:** PrivateEmail (Namecheap)  
-**Protocol:** IMAP/SMTP over SSL  
-**Goal:** Full conversational control over business email
-
-### Email Tools
-| Tool | Status | Purpose |
-|------|--------|---------|
-| `email_list` | ✅ Complete | List emails with filters (unread, from, subject, date range) |
-| `email_read` | ✅ Complete | Read full email content with attachments info |
-| `email_search` | ✅ Complete | Advanced search (query, sender, subject, body, attachments) |
-| `email_send` | ✅ Complete | Send new emails with CC/BCC/attachments |
-| `email_reply` | ✅ Complete | Reply to emails with quote, reply-all support |
-| `email_folders` | ✅ Complete | List all mailbox folders |
-
-**Features:**
-- 📥 Read & manage emails from both accounts
-- 📤 Send emails with attachments
-- 🔍 Advanced search with multiple criteria
-- 💬 Reply with automatic quoting
-- 📁 Multi-folder support
-- 🔒 Secure SSL/TLS connections
-
----
-
 ## 🏠 Phase 2B – Homelab Management (In Progress)
 
 **Infrastructure:** KVM/libvirt hypervisor managing 5 VMs across VLANs  
@@ -197,7 +176,7 @@ Focus on what matters: shipping code faster, testing easier, and managing projec
 
 ---
 
-## 🌐 Phase 2D – Browser Automation & Web Research - ✅ **COMPLETE**
+## 🌐 Phase 2C – Browser Automation & Web Research - ✅ **COMPLETE**
 
 **Goal:** Automate browser interactions, extract web content, and enable multi-source research workflows.
 
@@ -254,22 +233,22 @@ Solving the **"refresh hell"** problem for Django + Bootstrap + Vanilla CSS deve
 
 ## 📈 Progress
 
-**Total Tools Built:** 24
+**Total Tools Built:** 30
 **Phase 1:** 5/5 complete ✅
 **Phase 2A:** 6/6 complete ✅
 **Phase 2B Sprint 1:** 2/5 in progress
-**Phase 2C:** 6/6 complete ✅
-**Phase 2D:** 5/5 complete ✅ **NEW!**
+**Phase 2C:** 5/5 complete ✅
+**Phase 3:** 12/12 complete ✅ **NEW!**
 
 ---
 
 ## 🎯 Current Status
 
-**Latest Achievement:** Browser automation & web research tools complete! ✅
-Full browser automation with Playwright, Chrome DevTools integration, and multi-source research capabilities.
+**Latest Achievement:** Document Productivity Tools Complete! ✅
+Complete suite of 12 Microsoft Word (.docx) tools for automation, mail merge, analysis, and conversion.
 
-**Previous Achievement:** Email management tools complete! ✅
-Full control over markb@aimagineers.io and hello@aimagineers.io via conversational interface.
+**Recent Achievements:**
+- Browser automation & web research tools complete! ✅
 
 **Active Development:**
 - Homelab infrastructure management (networking, connectivity, firewall)
