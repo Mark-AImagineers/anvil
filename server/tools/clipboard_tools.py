@@ -2,11 +2,17 @@
 import os
 import json
 import subprocess
+import csv
+import io
+import logging
 from datetime import datetime
 from typing import List, Dict, Optional
 from pathlib import Path
 from mcp.types import TextContent
 from server.registry import registry
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 CLIPBOARD_HISTORY_FILE = Path.home() / ".anvil_clipboard_history.json"
@@ -61,36 +67,44 @@ def set_clipboard(content: str) -> bool:
     """Set clipboard content (cross-platform)"""
     try:
         # Try xclip (Linux)
-        subprocess.run(
+        result = subprocess.run(
             ["xclip", "-selection", "clipboard"],
             input=content.encode(),
-            timeout=2
+            timeout=2,
+            capture_output=True
         )
-        return True
-    except:
-        pass
-    
+        if result.returncode == 0:
+            return True
+    except Exception as e:
+        logger.debug(f"xclip failed: {e}")
+
     try:
         # Try wl-copy (Wayland)
-        subprocess.run(
+        result = subprocess.run(
             ["wl-copy"],
             input=content.encode(),
-            timeout=2
+            timeout=2,
+            capture_output=True
         )
-        return True
-    except:
-        pass
-    
+        if result.returncode == 0:
+            return True
+    except Exception as e:
+        logger.debug(f"wl-copy failed: {e}")
+
     try:
-        # Try PowerShell (Windows via WSL)
-        subprocess.run(
-            ["powershell.exe", "-command", f"Set-Clipboard -Value '{content}'"],
-            timeout=2
+        # Try PowerShell (Windows via WSL) - FIXED: No command injection
+        # Use stdin instead of command-line argument to avoid injection
+        result = subprocess.run(
+            ["powershell.exe", "-Command", "Set-Clipboard -Value $input"],
+            input=content.encode('utf-16le'),  # PowerShell expects UTF-16LE
+            timeout=2,
+            capture_output=True
         )
-        return True
-    except:
-        pass
-    
+        if result.returncode == 0:
+            return True
+    except Exception as e:
+        logger.debug(f"PowerShell clipboard failed: {e}")
+
     return False
 
 
@@ -216,25 +230,25 @@ def action_transform(arguments: dict) -> str:
         if transform_type == "json_to_csv":
             data = json.loads(content)
             if isinstance(data, list) and data:
-                keys = data[0].keys()
-                result = ",".join(keys) + "\n"
-                for item in data:
-                    result += ",".join(str(item.get(k, "")) for k in keys) + "\n"
+                # Use proper CSV writer
+                output = io.StringIO()
+                keys = list(data[0].keys())
+                writer = csv.DictWriter(output, fieldnames=keys)
+                writer.writeheader()
+                writer.writerows(data)
+                result = output.getvalue()
             else:
                 return "❌ Content is not a JSON array"
-        
+
         elif transform_type == "csv_to_json":
-            lines = content.strip().split("\n")
-            if len(lines) < 2:
-                return "❌ Invalid CSV format"
-            
-            headers = lines[0].split(",")
-            data = []
-            for line in lines[1:]:
-                values = line.split(",")
-                data.append(dict(zip(headers, values)))
-            
-            result = json.dumps(data, indent=2)
+            # Use proper CSV reader
+            try:
+                csv_file = io.StringIO(content)
+                reader = csv.DictReader(csv_file)
+                data = list(reader)
+                result = json.dumps(data, indent=2)
+            except csv.Error as e:
+                return f"❌ Invalid CSV format: {str(e)}"
         
         elif transform_type == "code_to_markdown":
             # Detect language (simple heuristic)

@@ -1,21 +1,44 @@
 # server/tools/playwright_session.py
-from typing import Optional
+from typing import Optional, Dict
 from playwright.sync_api import Browser, Page, sync_playwright
 import atexit
+import time
+import logging
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 class PlaywrightSession:
     """Manages a single Playwright browser session"""
-    
+
+    # Session timeout in seconds (30 minutes)
+    SESSION_TIMEOUT = 1800
+
     def __init__(self):
         self.playwright = None
         self.browser: Optional[Browser] = None
         self.page: Optional[Page] = None
         self.session_id: Optional[str] = None
+        self.last_activity: float = 0  # Track last activity time
+        self.created_at: float = 0  # Track session creation time
     
     def is_active(self) -> bool:
-        """Check if session is active"""
-        return self.browser is not None and self.page is not None
+        """Check if session is active and not expired"""
+        if self.browser is None or self.page is None:
+            return False
+
+        # Check if session has expired
+        if time.time() - self.last_activity > self.SESSION_TIMEOUT:
+            logger.info(f"Session {self.session_id} expired due to inactivity")
+            self.cleanup()
+            return False
+
+        return True
+
+    def _update_activity(self):
+        """Update last activity timestamp"""
+        self.last_activity = time.time()
     
     def launch(self, headless: bool = True, browser_type: str = "chromium") -> dict:
         """Launch browser and create page"""
@@ -24,13 +47,18 @@ class PlaywrightSession:
                 "success": False,
                 "error": "Session already active. Close existing session first."
             }
-        
+
         try:
             import uuid
             self.session_id = str(uuid.uuid4())[:8]
-            
+
+            # Initialize timestamps
+            current_time = time.time()
+            self.created_at = current_time
+            self.last_activity = current_time
+
             self.playwright = sync_playwright().start()
-            
+
             # Select browser
             if browser_type == "firefox":
                 browser_launcher = self.playwright.firefox
@@ -38,21 +66,24 @@ class PlaywrightSession:
                 browser_launcher = self.playwright.webkit
             else:
                 browser_launcher = self.playwright.chromium
-            
+
             self.browser = browser_launcher.launch(headless=headless)
             self.page = self.browser.new_page()
-            
+
             # Set default timeout
             self.page.set_default_timeout(30000)  # 30 seconds
-            
+
+            logger.info(f"Playwright session {self.session_id} launched successfully")
+
             return {
                 "success": True,
                 "session_id": self.session_id,
                 "browser": browser_type,
                 "headless": headless
             }
-        
+
         except Exception as e:
+            logger.error(f"Failed to launch Playwright session: {e}")
             self.cleanup()
             return {
                 "success": False,
@@ -100,7 +131,10 @@ class PlaywrightSession:
     
     def get_page(self) -> Optional[Page]:
         """Get current page instance"""
-        return self.page if self.is_active() else None
+        if self.is_active():
+            self._update_activity()  # Update activity on page access
+            return self.page
+        return None
 
 
 # Global session instance

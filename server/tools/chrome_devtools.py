@@ -2,20 +2,25 @@
 import json
 import requests
 import websocket
+import logging
 from typing import Optional, List, Dict, Any
 from mcp.types import TextContent
 from server.registry import registry
 
+# Configure logging
+logger = logging.getLogger(__name__)
+
 
 class ChromeDevToolsClient:
     """Client for Chrome DevTools Protocol"""
-    
-    def __init__(self, host: str = "localhost", port: int = 9222):
+
+    def __init__(self, host: str = "localhost", port: int = 9222, timeout: int = 10):
         self.host = host
         self.port = port
         self.base_url = f"http://{host}:{port}"
         self.ws = None
         self.message_id = 0
+        self.timeout = timeout  # WebSocket timeout in seconds
         
     def get_tabs(self) -> List[Dict[str, Any]]:
         """Get list of all open tabs"""
@@ -52,36 +57,65 @@ class ChromeDevToolsClient:
         ws_url = tab.get("webSocketDebuggerUrl")
         if not ws_url:
             raise Exception("Tab does not have WebSocket URL")
-        
-        self.ws = websocket.create_connection(ws_url)
+
+        try:
+            # Add timeout to WebSocket connection
+            self.ws = websocket.create_connection(ws_url, timeout=self.timeout)
+        except Exception as e:
+            logger.error(f"Failed to connect to tab: {e}")
+            raise Exception(f"Failed to connect WebSocket: {str(e)}")
     
     def send_command(self, method: str, params: Optional[Dict] = None) -> Dict:
         """Send command to Chrome DevTools"""
         if not self.ws:
             raise Exception("Not connected to any tab")
-        
+
         self.message_id += 1
         message = {
             "id": self.message_id,
             "method": method,
             "params": params or {}
         }
-        
-        self.ws.send(json.dumps(message))
-        
-        # Wait for response
-        while True:
-            response = json.loads(self.ws.recv())
-            if response.get("id") == self.message_id:
-                if "error" in response:
-                    raise Exception(f"DevTools error: {response['error']}")
-                return response.get("result", {})
+
+        try:
+            self.ws.send(json.dumps(message))
+
+            # Set socket timeout for recv
+            self.ws.settimeout(self.timeout)
+
+            # Wait for response with timeout protection
+            max_iterations = 100  # Prevent infinite loop
+            iterations = 0
+
+            while iterations < max_iterations:
+                try:
+                    response = json.loads(self.ws.recv())
+                    if response.get("id") == self.message_id:
+                        if "error" in response:
+                            error_msg = response['error']
+                            logger.error(f"DevTools error for {method}: {error_msg}")
+                            raise Exception(f"DevTools error: {error_msg}")
+                        return response.get("result", {})
+                    iterations += 1
+                except websocket.WebSocketTimeoutException:
+                    logger.error(f"Timeout waiting for response to {method}")
+                    raise Exception(f"Timeout waiting for DevTools response to {method}")
+
+            raise Exception(f"Too many messages received without matching ID for {method}")
+
+        except Exception as e:
+            logger.error(f"Error sending command {method}: {e}")
+            raise
     
     def close(self):
         """Close WebSocket connection"""
         if self.ws:
-            self.ws.close()
-            self.ws = None
+            try:
+                self.ws.close()
+            except Exception as e:
+                logger.debug(f"Error closing WebSocket (may already be closed): {e}")
+            finally:
+                self.ws = None
 
 
 def action_connect(client: ChromeDevToolsClient, arguments: dict) -> str:

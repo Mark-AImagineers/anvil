@@ -2,18 +2,28 @@
 import json
 import requests
 import websocket
+import time
+import logging
 from typing import List, Dict, Optional
 from mcp.types import TextContent
 from server.registry import registry
 
+# Configure logging
+logger = logging.getLogger(__name__)
+
 
 class ResearchHelper:
     """Helper for multi-source research using browser tabs"""
-    
+
+    # Cache timeout in seconds (5 minutes)
+    CACHE_TIMEOUT = 300
+
     def __init__(self, host: str = "localhost", port: int = 9222):
         self.host = host
         self.port = port
         self.base_url = f"http://{host}:{port}"
+        self._content_cache: Dict[str, Dict] = {}  # Cache tab content by URL
+        self._cache_timestamps: Dict[str, float] = {}  # Track cache age
     
     def get_tabs(self) -> List[Dict]:
         """Get list of all open tabs"""
@@ -25,14 +35,23 @@ class ResearchHelper:
             raise Exception(f"Failed to get tabs: {str(e)}")
     
     def get_tab_content(self, tab: Dict) -> Dict:
-        """Get content from a specific tab"""
+        """Get content from a specific tab (with caching)"""
+        tab_url = tab.get("url", "")
+
+        # Check cache first
+        if tab_url in self._content_cache:
+            cache_age = time.time() - self._cache_timestamps.get(tab_url, 0)
+            if cache_age < self.CACHE_TIMEOUT:
+                logger.debug(f"Using cached content for {tab_url} (age: {cache_age:.1f}s)")
+                return self._content_cache[tab_url]
+
         ws_url = tab.get("webSocketDebuggerUrl")
         if not ws_url:
             return {"error": "No WebSocket URL"}
-        
+
         try:
             ws = websocket.create_connection(ws_url, timeout=5)
-            
+
             # Execute JavaScript to get content
             message = {
                 "id": 1,
@@ -55,17 +74,26 @@ class ResearchHelper:
                     "returnByValue": True
                 }
             }
-            
+
             ws.send(json.dumps(message))
             response = json.loads(ws.recv())
             ws.close()
-            
+
             if "error" in response:
                 return {"error": str(response["error"])}
-            
-            return response.get("result", {}).get("value", {})
-        
+
+            content = response.get("result", {}).get("value", {})
+
+            # Cache the content
+            if tab_url and "error" not in content:
+                self._content_cache[tab_url] = content
+                self._cache_timestamps[tab_url] = time.time()
+                logger.debug(f"Cached content for {tab_url}")
+
+            return content
+
         except Exception as e:
+            logger.error(f"Error fetching tab content: {e}")
             return {"error": str(e)}
     
     def find_tabs_by_pattern(self, patterns: List[str]) -> List[Dict]:
