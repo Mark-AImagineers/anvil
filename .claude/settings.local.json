@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "mcp__anvil__email_list",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(glab auth status:*)",
+      "Bash(GITLAB_HOST=gitlab.aimagineers.io glab auth:*)",
+      "Bash(GITLAB_HOST=gitlab.aimagineers.io glab repo list:*)",
+      "Bash(gh pr:*)",
+      "Bash(glab mr:*)",
+      "Bash(GITLAB_HOST=gitlab.aimagineers.io glab issue list:*)"
     ],
     "deny": [],
     "ask": []
